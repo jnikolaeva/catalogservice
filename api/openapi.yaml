@@ -1,0 +1,196 @@
+openapi: 3.0.0
+info:
+  title: Demo product catalog API
+  description: |
+    This is simple client API
+  contact:
+    email: julia.matveeva@gmail.com
+  version: 1.0.0
+servers:
+  - url: http://hostname/api/v1/catalog
+tags:
+  - name: catalog
+    description: Operations about catalog
+paths:
+  /:
+    post:
+      tags: [catalog]
+      description: Create catalog item
+      operationId: createCatalogItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogItemParams'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags: [catalog]
+      description: List catalog items
+      operationId: listCatalogItems
+      parameters:
+        - name: page_after
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 109
+        - name: page_count
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            example: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogItemsPage'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /{id}:
+    get:
+      tags: [catalog]
+      description: Get catalog item
+      operationId: getCatalogItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogItem'
+        "404":
+          description: not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    CatalogItemParams:
+      type: object
+      required:
+        - sku
+        - title
+        - price
+        - available_qty
+        - image
+      properties:
+        sku:
+          type: string
+        title:
+          type: string
+        price:
+          type: string
+        available_qty:
+          type: integer
+        image:
+          $ref: '#/components/schemas/Image'
+    CatalogItemsPage:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogItem'
+        count:
+          type: integer
+          minimum: 0
+        after:
+          type: string
+    CatalogItem:
+      type: object
+      required:
+        - id
+        - sku
+        - title
+        - price
+        - available_qty
+        - image
+      properties:
+        id:
+          type: string
+        sku:
+          type: string
+        title:
+          type: string
+        price:
+          type: string
+        available_qty:
+          type: integer
+        image:
+          $ref: '#/components/schemas/Image'
+    Image:
+      type: object
+      required:
+        - width
+        - height
+        - url
+      properties:
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+        url:
+          type: string
+          format: uri
+    Error:
+      required:
+        - code
+        - message
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

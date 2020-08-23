@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS products (
+    id UUID NOT NULL PRIMARY KEY,
+    title VARCHAR(256) NOT NULL,
+    sku VARCHAR(256) NOT NULL UNIQUE,
+    price DECIMAL NOT NULL,
+    available_qty INTEGER NOT NULL DEFAULT 0,
+    image_url VARCHAR(1024) NOT NULL,
+    image_width INTEGER NOT NULL,
+    image_height INTEGER NOT NULL
+);
