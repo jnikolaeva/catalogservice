@@ -53,19 +53,18 @@ paths:
       description: List catalog items
       operationId: listCatalogItems
       parameters:
-        - name: page_after
-          in: query
-          required: false
-          schema:
-            type: string
-            example: 109
-        - name: page_count
+        - name: page_num
           in: query
           required: false
           schema:
             type: integer
-            minimum: 0
-            example: 10
+            minimum: 1
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
       responses:
         "200":
           description: OK
@@ -143,8 +142,6 @@ components:
         count:
           type: integer
           minimum: 0
-        after:
-          type: string
     CatalogItem:
       type: object
       required:

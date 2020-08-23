@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"fmt"
+
 	"github.com/jackc/pgx"
 	"github.com/jnikolaeva/eshop-common/uuid"
 	"github.com/pkg/errors"
@@ -60,9 +62,16 @@ func (r *repository) FindByID(id application.CatalogItemID) (*application.Catalo
 
 func (r *repository) Find(spec *application.PageSpec) ([]*application.CatalogItem, error) {
 	var items []*application.CatalogItem
-	// TODO: add pagination
 	query := `SELECT id, title, sku, price, available_qty, image_url, image_width, image_height
 		FROM products`
+	if spec != nil {
+		if spec.Number == 1 {
+			query += fmt.Sprintf(" LIMIT %d", spec.Size)
+		} else {
+			query += fmt.Sprintf(" LIMIT %d OFFSET %d", spec.Size, (spec.Number-1)*spec.Size)
+		}
+
+	}
 	rows, err := r.connPool.Query(query)
 	if err != nil {
 		return nil, errors.WithStack(err)

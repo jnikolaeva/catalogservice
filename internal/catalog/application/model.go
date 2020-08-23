@@ -12,14 +12,8 @@ func (u CatalogItemID) String() string {
 }
 
 type PageSpec struct {
-	Count int
-	After string
-}
-
-type CatalogPage struct {
-	Items []*CatalogItem
-	Count int
-	After string
+	Size   int
+	Number int
 }
 
 type CatalogItem struct {

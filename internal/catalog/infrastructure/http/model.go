@@ -7,7 +7,7 @@ import (
 )
 
 type listCatalogItemsRequest struct {
-	Page *application.PageSpec
+	Spec *application.PageSpec
 }
 
 type listCatalogItemsResponse struct {

@@ -26,7 +26,7 @@ func MakeEndpoints(s application.Service) Endpoints {
 func makeListCatalogItemsEndpoint(s application.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(*listCatalogItemsRequest)
-		items, err := s.Find(req.Page)
+		items, err := s.Find(req.Spec)
 		if err != nil {
 			return nil, err
 		}
@@ -38,9 +38,6 @@ func makeListCatalogItemsEndpoint(s application.Service) endpoint.Endpoint {
 		res := &listCatalogItemsResponse{
 			Items: catalogItems,
 			Count: count,
-		}
-		if count > 0 {
-			res.After = items[count-1].ID.String()
 		}
 		return res, nil
 	}

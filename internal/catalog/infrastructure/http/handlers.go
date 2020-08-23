@@ -19,6 +19,8 @@ import (
 	"github.com/jnikolaeva/catalogservice/internal/catalog/application"
 )
 
+const defaultPageSize = 10
+
 var (
 	ErrBadRouting = errors.New("bad routing")
 	ErrBadRequest = errors.New("bad request")
@@ -44,16 +46,19 @@ func MakeHandler(pathPrefix string, endpoints Endpoints, errorLogger log.Logger,
 
 func decodeListCatalogItemsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	query := r.URL.Query()
-	pageCount, err := strconv.Atoi(query.Get("page_count"))
-	if err != nil {
-		pageCount = 10
+	pageSize, err := strconv.Atoi(query.Get("page_size"))
+	if err != nil || pageSize <= 0 {
+		pageSize = defaultPageSize
 	}
-	pageAfter := query.Get("page_after")
-	page := &application.PageSpec{
-		Count: pageCount,
-		After: pageAfter,
+	pageNum, err := strconv.Atoi(query.Get("page_num"))
+	if err != nil || pageNum <= 0 {
+		pageNum = 1
 	}
-	return &listCatalogItemsRequest{Page: page}, nil
+	spec := &application.PageSpec{
+		Size:   pageSize,
+		Number: pageNum,
+	}
+	return &listCatalogItemsRequest{Spec: spec}, nil
 }
 
 func decodeCreateCatalogItemRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
