@@ -1,0 +1,1 @@
+ALTER TABLE products ADD color VARCHAR(100) NOT NULL DEFAULT '';

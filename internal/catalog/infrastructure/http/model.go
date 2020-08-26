@@ -6,23 +6,26 @@ import (
 	"github.com/jnikolaeva/catalogservice/internal/catalog/application"
 )
 
-type listCatalogItemsRequest struct {
-	Spec *application.PageSpec
+type listProductsRequest struct {
+	PageSpec *application.PageSpec
+	Filters  *application.Filters
 }
 
-type listCatalogItemsResponse struct {
-	Items []*catalogItem `json:"items"`
-	After string         `json:"after,omitempty"`
-	Count int            `json:"count"`
+type listProductsResponse struct {
+	Items []*product `json:"items"`
+	After string     `json:"after,omitempty"`
+	Count int        `json:"count"`
 }
 
-type catalogItem struct {
+type product struct {
 	ID           string          `json:"id"`
 	Title        string          `json:"title"`
 	SKU          string          `json:"sku"`
 	Price        decimal.Decimal `json:"price"`
 	AvailableQty int             `json:"available_qty"`
 	Image        image           `json:"image"`
+	Color        string          `json:"color"`
+	Material     string          `json:"material"`
 }
 
 type image struct {
@@ -31,49 +34,59 @@ type image struct {
 	Height *int   `json:"height"`
 }
 
-type createCatalogItemRequest struct {
+type createProductRequest struct {
 	Title        string `json:"title"`
 	SKU          string `json:"sku"`
 	PriceStr     string `json:"price"`
 	AvailableQty *int   `json:"available_qty"`
 	Price        decimal.Decimal
 	Image        *image `json:"image"`
+	Color        string `json:"color"`
+	Material     string `json:"material"`
 }
 
-func (c *createCatalogItemRequest) GetTitle() string {
+func (c *createProductRequest) GetTitle() string {
 	return c.Title
 }
 
-func (c *createCatalogItemRequest) GetSKU() string {
+func (c *createProductRequest) GetSKU() string {
 	return c.SKU
 }
 
-func (c *createCatalogItemRequest) GetPrice() decimal.Decimal {
+func (c *createProductRequest) GetPrice() decimal.Decimal {
 	return c.Price
 }
 
-func (c *createCatalogItemRequest) GetAvailableQty() int {
+func (c *createProductRequest) GetAvailableQty() int {
 	return *c.AvailableQty
 }
 
-func (c *createCatalogItemRequest) GetImageURL() string {
+func (c *createProductRequest) GetImageURL() string {
 	return c.Image.URL
 }
 
-func (c *createCatalogItemRequest) GetImageWidth() int {
+func (c *createProductRequest) GetImageWidth() int {
 	return *c.Image.Width
 }
 
-func (c *createCatalogItemRequest) GetImageHeight() int {
+func (c *createProductRequest) GetImageHeight() int {
 	return *c.Image.Height
 }
 
-type createCatalogItemResponse struct {
+func (c *createProductRequest) GetColor() string {
+	return c.Color
+}
+
+func (c *createProductRequest) GetMaterial() string {
+	return c.Material
+}
+
+type createProductResponse struct {
 	ID string `json:"id"`
 }
 
-type getCatalogItemByIDResponse struct {
-	catalogItem
+type getProductByIDResponse struct {
+	product
 }
 
 type errorResponse struct {

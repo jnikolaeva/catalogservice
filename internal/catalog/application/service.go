@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	ErrCatalogItemNotFound  = errors.New("catalog item not found")
-	ErrDuplicateCatalogItem = errors.New("catalog item with such SKU already exists")
+	ErrProductNotFound  = errors.New("product not found")
+	ErrDuplicateProduct = errors.New("product with such SKU already exists")
 )
 
-type CatalogItemParams interface {
+type ProductParams interface {
 	GetTitle() string
 	GetSKU() string
 	GetPrice() decimal.Decimal
@@ -19,12 +19,14 @@ type CatalogItemParams interface {
 	GetImageURL() string
 	GetImageWidth() int
 	GetImageHeight() int
+	GetColor() string
+	GetMaterial() string
 }
 
 type Service interface {
-	FindByID(id uuid.UUID) (*CatalogItem, error)
-	Find(spec *PageSpec) ([]*CatalogItem, error)
-	Create(params CatalogItemParams) (CatalogItemID, error)
+	FindByID(id uuid.UUID) (*Product, error)
+	Find(spec *PageSpec, filters *Filters) ([]*Product, error)
+	Create(params ProductParams) (ProductID, error)
 }
 
 type service struct {
@@ -35,17 +37,17 @@ func NewService(repository Repository) Service {
 	return &service{repo: repository}
 }
 
-func (s *service) FindByID(id uuid.UUID) (*CatalogItem, error) {
-	return s.repo.FindByID(CatalogItemID(id))
+func (s *service) FindByID(id uuid.UUID) (*Product, error) {
+	return s.repo.FindByID(ProductID(id))
 }
 
-func (s *service) Find(spec *PageSpec) ([]*CatalogItem, error) {
-	return s.repo.Find(spec)
+func (s *service) Find(spec *PageSpec, filters *Filters) ([]*Product, error) {
+	return s.repo.Find(spec, filters)
 }
 
-func (s *service) Create(params CatalogItemParams) (CatalogItemID, error) {
+func (s *service) Create(params ProductParams) (ProductID, error) {
 	id := s.repo.NextID()
-	item := CatalogItem{
+	item := Product{
 		ID:           id,
 		Title:        params.GetTitle(),
 		SKU:          params.GetSKU(),
@@ -56,10 +58,12 @@ func (s *service) Create(params CatalogItemParams) (CatalogItemID, error) {
 			Width:  params.GetImageWidth(),
 			Height: params.GetImageHeight(),
 		},
+		Color:    params.GetColor(),
+		Material: params.GetMaterial(),
 	}
 	err := s.repo.Add(item)
 	if err != nil {
-		return CatalogItemID{}, errors.WithStack(err)
+		return ProductID{}, errors.WithStack(err)
 	}
 	return id, nil
 }

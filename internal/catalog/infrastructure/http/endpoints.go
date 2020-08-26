@@ -10,63 +10,63 @@ import (
 )
 
 type Endpoints struct {
-	ListCatalogItems   endpoint.Endpoint
-	GetCatalogItemByID endpoint.Endpoint
-	CreateCatalogItem  endpoint.Endpoint
+	ListProducts   endpoint.Endpoint
+	GetProductByID endpoint.Endpoint
+	CreateProduct  endpoint.Endpoint
 }
 
 func MakeEndpoints(s application.Service) Endpoints {
 	return Endpoints{
-		ListCatalogItems:   makeListCatalogItemsEndpoint(s),
-		GetCatalogItemByID: makeGetCatalogItemByIDEndpoint(s),
-		CreateCatalogItem:  makeCreateCatalogItemEndpoint(s),
+		ListProducts:   makeListProductsEndpoint(s),
+		GetProductByID: makeGetProductByIDEndpoint(s),
+		CreateProduct:  makeCreateProductEndpoint(s),
 	}
 }
 
-func makeListCatalogItemsEndpoint(s application.Service) endpoint.Endpoint {
+func makeListProductsEndpoint(s application.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*listCatalogItemsRequest)
-		items, err := s.Find(req.Spec)
+		req := request.(*listProductsRequest)
+		items, err := s.Find(req.PageSpec, req.Filters)
 		if err != nil {
 			return nil, err
 		}
 		count := len(items)
-		catalogItems := make([]*catalogItem, count)
+		products := make([]*product, count)
 		for i, item := range items {
-			catalogItems[i] = toCatalogItem(item)
+			products[i] = toProduct(item)
 		}
-		res := &listCatalogItemsResponse{
-			Items: catalogItems,
+		res := &listProductsResponse{
+			Items: products,
 			Count: count,
 		}
 		return res, nil
 	}
 }
 
-func makeGetCatalogItemByIDEndpoint(s application.Service) endpoint.Endpoint {
+func makeGetProductByIDEndpoint(s application.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		id := request.(*uuid.UUID)
 		item, err := s.FindByID(*id)
 		if err != nil {
 			return nil, err
 		}
-		return &getCatalogItemByIDResponse{*toCatalogItem(item)}, nil
+		return &getProductByIDResponse{*toProduct(item)}, nil
 	}
 }
 
-func makeCreateCatalogItemEndpoint(s application.Service) endpoint.Endpoint {
+func makeCreateProductEndpoint(s application.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(*createCatalogItemRequest)
+		req := request.(*createProductRequest)
 		id, err := s.Create(req)
 		if err != nil {
 			return nil, err
 		}
-		return &createCatalogItemResponse{ID: id.String()}, nil
+		return &createProductResponse{ID: id.String()}, nil
 	}
 }
 
-func toCatalogItem(item *application.CatalogItem) *catalogItem {
-	return &catalogItem{
+func toProduct(item *application.Product) *product {
+	return &product{
 		ID:           item.ID.String(),
 		Title:        item.Title,
 		SKU:          item.SKU,
@@ -77,5 +77,7 @@ func toCatalogItem(item *application.CatalogItem) *catalogItem {
 			Width:  &item.Image.Width,
 			Height: &item.Image.Height,
 		},
+		Color:    item.Color,
+		Material: item.Material,
 	}
 }

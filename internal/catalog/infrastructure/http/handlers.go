@@ -32,19 +32,19 @@ func MakeHandler(pathPrefix string, endpoints Endpoints, errorLogger log.Logger,
 		gokithttp.ServerErrorHandler(gokittransport.NewLogErrorHandler(errorLogger)),
 	}
 
-	listCatalogItemsHandler := gokithttp.NewServer(endpoints.ListCatalogItems, decodeListCatalogItemsRequest, encodeResponse, options...)
-	getCatalogItemByIDHandler := gokithttp.NewServer(endpoints.GetCatalogItemByID, decodeGetCatalogItemByIDRequest, encodeResponse, options...)
-	createCatalogItemHandler := gokithttp.NewServer(endpoints.CreateCatalogItem, decodeCreateCatalogItemRequest, encodeResponse, options...)
+	listProductsHandler := gokithttp.NewServer(endpoints.ListProducts, decodeListProductsRequest, encodeResponse, options...)
+	getProductByIDHandler := gokithttp.NewServer(endpoints.GetProductByID, decodeGetProductByIDRequest, encodeResponse, options...)
+	createProductHandler := gokithttp.NewServer(endpoints.CreateProduct, decodeCreateProductRequest, encodeResponse, options...)
 
 	r := mux.NewRouter()
 	s := r.PathPrefix(pathPrefix).Subrouter()
-	s.Handle("", httpkit.InstrumentingMiddleware(listCatalogItemsHandler, metrics, "ListCatalogItems")).Methods(http.MethodGet)
-	s.Handle("", httpkit.InstrumentingMiddleware(createCatalogItemHandler, metrics, "CreateCatalogItem")).Methods(http.MethodPost)
-	s.Handle("/{id}", httpkit.InstrumentingMiddleware(getCatalogItemByIDHandler, metrics, "GetCatalogItemByID")).Methods(http.MethodGet)
+	s.Handle("/products", httpkit.InstrumentingMiddleware(listProductsHandler, metrics, "ListProducts")).Methods(http.MethodGet)
+	s.Handle("/products", httpkit.InstrumentingMiddleware(createProductHandler, metrics, "CreateProduct")).Methods(http.MethodPost)
+	s.Handle("/products/{id}", httpkit.InstrumentingMiddleware(getProductByIDHandler, metrics, "GetProductByID")).Methods(http.MethodGet)
 	return r
 }
 
-func decodeListCatalogItemsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeListProductsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	query := r.URL.Query()
 	pageSize, err := strconv.Atoi(query.Get("page_size"))
 	if err != nil || pageSize <= 0 {
@@ -54,15 +54,31 @@ func decodeListCatalogItemsRequest(_ context.Context, r *http.Request) (request 
 	if err != nil || pageNum <= 0 {
 		pageNum = 1
 	}
-	spec := &application.PageSpec{
+	pageSpec := &application.PageSpec{
 		Size:   pageSize,
 		Number: pageNum,
 	}
-	return &listCatalogItemsRequest{Spec: spec}, nil
+	result := &listProductsRequest{
+		PageSpec: pageSpec,
+		Filters: &application.Filters{
+			Color:    &[]string{},
+			Material: &[]string{},
+		},
+	}
+	if err := parseFilter(query, "price", parseDecimalRangeFilter, &result.Filters.Price); err != nil {
+		return nil, errors.Wrap(ErrBadRequest, err.Error())
+	}
+	if err := parseFilter(query, "color", parseStringOrFilter, result.Filters.Color); err != nil {
+		return nil, errors.Wrap(ErrBadRequest, err.Error())
+	}
+	if err := parseFilter(query, "material", parseStringOrFilter, result.Filters.Material); err != nil {
+		return nil, errors.Wrap(ErrBadRequest, err.Error())
+	}
+	return result, nil
 }
 
-func decodeCreateCatalogItemRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req createCatalogItemRequest
+func decodeCreateProductRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	var req createProductRequest
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil && e != io.EOF {
 		return nil, e
 	}
@@ -90,6 +106,12 @@ func decodeCreateCatalogItemRequest(_ context.Context, r *http.Request) (request
 	if req.Image.Height == nil {
 		return nil, errors.Wrap(ErrBadRequest, "missing required parameter 'image.height'")
 	}
+	if req.Color == "" {
+		return nil, errors.Wrap(ErrBadRequest, "missing required parameter 'color'")
+	}
+	if req.Material == "" {
+		return nil, errors.Wrap(ErrBadRequest, "missing required parameter 'material'")
+	}
 
 	req.Price, err = decimal.NewFromString(req.PriceStr)
 	if err != nil {
@@ -99,7 +121,7 @@ func decodeCreateCatalogItemRequest(_ context.Context, r *http.Request) (request
 	return &req, nil
 }
 
-func decodeGetCatalogItemByIDRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeGetProductByIDRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	sID, ok := vars["id"]
 	if !ok {
@@ -142,7 +164,7 @@ func translateError(err error) transportError {
 				Message: err.Error(),
 			},
 		}
-	} else if errors.Is(err, application.ErrCatalogItemNotFound) {
+	} else if errors.Is(err, application.ErrProductNotFound) {
 		return transportError{
 			Status: http.StatusNotFound,
 			Response: errorResponse{
@@ -150,7 +172,7 @@ func translateError(err error) transportError {
 				Message: err.Error(),
 			},
 		}
-	} else if errors.Is(err, application.ErrDuplicateCatalogItem) {
+	} else if errors.Is(err, application.ErrDuplicateProduct) {
 		return transportError{
 			Status: http.StatusConflict,
 			Response: errorResponse{

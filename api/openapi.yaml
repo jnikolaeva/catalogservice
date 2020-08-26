@@ -9,19 +9,19 @@ info:
 servers:
   - url: http://hostname/api/v1/catalog
 tags:
-  - name: catalog
-    description: Operations about catalog
+  - name: products
+    description: Operations about products
 paths:
-  /:
+  /products:
     post:
-      tags: [catalog]
-      description: Create catalog item
-      operationId: createCatalogItem
+      tags: [products]
+      description: Create product
+      operationId: createProduct
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CatalogItemParams'
+              $ref: '#/components/schemas/ProductParams'
         required: true
       responses:
         "200":
@@ -49,9 +49,9 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     get:
-      tags: [catalog]
-      description: List catalog items
-      operationId: listCatalogItems
+      tags: [products]
+      description: List products
+      operationId: listProducts
       parameters:
         - name: page_num
           in: query
@@ -65,24 +65,45 @@ paths:
           schema:
             type: integer
             minimum: 1
+        - name: price
+          in: query
+          required: false
+          description: Comma separated min and max value
+          schema:
+            type: string
+          example: "price=100.50,300.50"
+        - name: color
+          in: query
+          required: false
+          description: Comma separated list of values
+          schema:
+            type: string
+          example: "color=pink,purple,red"
+        - name: material
+          in: query
+          required: false
+          description: Comma separated list of values
+          schema:
+            type: string
+          example: "material=steel,cotton"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalogItemsPage'
+                $ref: '#/components/schemas/ProductsPage'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /{id}:
+  /products/{id}:
     get:
-      tags: [catalog]
-      description: Get catalog item
-      operationId: getCatalogItem
+      tags: [products]
+      description: Get product
+      operationId: getProduct
       parameters:
         - name: id
           in: path
@@ -95,7 +116,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalogItem'
+                $ref: '#/components/schemas/Product'
         "404":
           description: not found
           content:
@@ -111,7 +132,7 @@ paths:
 
 components:
   schemas:
-    CatalogItemParams:
+    ProductParams:
       type: object
       required:
         - sku
@@ -119,6 +140,8 @@ components:
         - price
         - available_qty
         - image
+        - color
+        - material
       properties:
         sku:
           type: string
@@ -130,7 +153,11 @@ components:
           type: integer
         image:
           $ref: '#/components/schemas/Image'
-    CatalogItemsPage:
+        color:
+          type: string
+        material:
+          type: string
+    ProductsPage:
       type: object
       required:
         - items
@@ -138,11 +165,11 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/CatalogItem'
+            $ref: '#/components/schemas/Product'
         count:
           type: integer
           minimum: 0
-    CatalogItem:
+    Product:
       type: object
       required:
         - id
@@ -151,6 +178,8 @@ components:
         - price
         - available_qty
         - image
+        - color
+        - material
       properties:
         id:
           type: string
@@ -164,6 +193,10 @@ components:
           type: integer
         image:
           $ref: '#/components/schemas/Image'
+        color:
+          type: string
+        material:
+          type: string
     Image:
       type: object
       required:

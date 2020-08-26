@@ -5,9 +5,9 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type CatalogItemID uuid.UUID
+type ProductID uuid.UUID
 
-func (u CatalogItemID) String() string {
+func (u ProductID) String() string {
 	return uuid.UUID(u).String()
 }
 
@@ -16,13 +16,28 @@ type PageSpec struct {
 	Number int
 }
 
-type CatalogItem struct {
-	ID           CatalogItemID
+type DecimalRangeFilter struct {
+	Min *decimal.Decimal
+	Max *decimal.Decimal
+}
+
+type StringOrFilter []string
+
+type Filters struct {
+	Price    DecimalRangeFilter
+	Color    *[]string
+	Material *[]string
+}
+
+type Product struct {
+	ID           ProductID
 	Title        string
 	SKU          string
 	Price        decimal.Decimal
 	AvailableQty int
 	Image        *Image
+	Color        string
+	Material     string
 }
 
 type Image struct {
@@ -32,8 +47,8 @@ type Image struct {
 }
 
 type Repository interface {
-	NextID() CatalogItemID
-	FindByID(id CatalogItemID) (*CatalogItem, error)
-	Find(spec *PageSpec) ([]*CatalogItem, error)
-	Add(item CatalogItem) error
+	NextID() ProductID
+	FindByID(id ProductID) (*Product, error)
+	Find(spec *PageSpec, filters *Filters) ([]*Product, error)
+	Add(item Product) error
 }
